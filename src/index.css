@@ -106,3 +106,28 @@ nav {
     padding: 1rem;
   }
 }
+
+ul li {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 1rem; /* Еще большее расстояние между контактами */
+}
+
+ul li span {
+  margin-right: 20px;  /* Расстояние между именем и статусом */
+}
+
+ul li button {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: 1px solid #3182ce;
+  color: #3182ce;
+  border-radius: 5px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+ul li button:hover {
+  background-color: #ce2565;
+  color: white;
+}

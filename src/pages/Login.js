@@ -34,34 +34,44 @@ const Login = () => {
             setErrorMessage("Login failed. Please try again.");
         }
     };
+    const handleGoogleLogin = () => {
+        // Перенаправление на сервер для авторизации через Google
+        window.location.href = "http://127.0.0.1:8000/auth/google";  // Убедитесь, что URL соответствует вашему серверу
+    };
 
     return (
         <div className="container">
-        <form onSubmit={handleSubmit}>
-            <h1>Login</h1>
+            <form onSubmit={handleSubmit}>
+                <h1>Login</h1>
+                <div>
+                    <input
+                        type="text"
+                        name="username"
+                        placeholder="Username"
+                        value={formData.username}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={handleChange}
+                    />
+                </div>
+                {errorMessage && <div style={{color: "red"}}>{errorMessage}</div>} {/* Отображаем ошибку */}
+                <button type="submit">Login</button>
+            </form>
             <div>
-                <input
-                    type="text"
-                    name="username"
-                    placeholder="Username"
-                    value={formData.username}
-                    onChange={handleChange}
-                />
+                <h2> </h2>
+                <button onClick={handleGoogleLogin}>Login with Google</button>
+                {/* Кнопка для входа через Google */}
             </div>
-            <div>
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                />
-            </div>
-            {errorMessage && <div style={{ color: "red" }}>{errorMessage}</div>}  {/* Отображаем ошибку */}
-            <button type="submit">Login</button>
-        </form>
         </div>
-    );
+)
+    ;
 };
 
 export default Login;

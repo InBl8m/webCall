@@ -38,40 +38,50 @@ const Register = () => {
         }
     };
 
+    const handleGoogleLogin = () => {
+        // Перенаправление на сервер для авторизации через Google
+        window.location.href = "http://127.0.0.1:8000/auth/google";  // Убедитесь, что URL соответствует вашему серверу
+    };
+
     return (
         <div className="container">
-        <form onSubmit={handleSubmit}>
-            <h1>Register</h1>
+            <form onSubmit={handleSubmit}>
+                <h1>Register</h1>
+                <div>
+                    <input
+                        type="text"
+                        name="username"
+                        placeholder="Username"
+                        value={formData.username}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="Email"
+                        value={formData.email}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={handleChange}
+                    />
+                </div>
+                {errorMessage && <div style={{color: "red"}}>{errorMessage}</div>} {/* Отображаем ошибку */}
+                <button type="submit">Register</button>
+            </form>
             <div>
-                <input
-                    type="text"
-                    name="username"
-                    placeholder="Username"
-                    value={formData.username}
-                    onChange={handleChange}
-                />
+                <h2> </h2>
+                <button onClick={handleGoogleLogin}>Register with Google</button>
+                {/* Кнопка для входа через Google */}
             </div>
-            <div>
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={handleChange}
-                />
-            </div>
-            <div>
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                />
-            </div>
-            {errorMessage && <div style={{ color: "red" }}>{errorMessage}</div>}  {/* Отображаем ошибку */}
-            <button type="submit">Register</button>
-        </form>
         </div>
     );
 };

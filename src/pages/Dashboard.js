@@ -25,7 +25,7 @@ const Dashboard = () => {
         const fetchIncomingRequests = async () => {
             try {
                 const incomingResponse = await getIncomingRequests();
-                console.log(incomingResponse.data);  // Выводим данные ответа
+                // console.log(incomingResponse.data);  // Выводим данные ответа
                 setIncomingRequests(incomingResponse.data.pending_requests || []);
             } catch (err) {
                 console.error("Error fetching incoming requests:", err);
@@ -60,7 +60,12 @@ const Dashboard = () => {
             setIncomingRequests(prevRequests =>
                 prevRequests.filter(request => request.username !== contactUsername)
             );
-
+            // Убираем пользователя из результатов поиска
+            setSearchResults(prevResults =>
+                prevResults.filter(user => user.username !== contactUsername)
+            );
+            // Закрываем поиск после добавления контакта
+            setIsSearchVisible(false);
             // Перезапрашиваем список контактов, чтобы синхронизироваться с сервером
             const updatedUserInfo = await getUserInfo();
             setContacts(updatedUserInfo.data.contacts || []);
@@ -85,13 +90,13 @@ const Dashboard = () => {
 
     return (
         <div className="container">
-            <h1>Dashboard</h1>
+            {/*<h1>Dashboard</h1>*/}
             {user ? (
                 <>
-                    <p>Welcome, {user.username}! Your role is {user.role}.</p>
+                    {/*<p>Welcome, {user.username}! Your role is {user.role}.</p>*/}
 
                     <div>
-                        <h2>Your Contacts</h2>
+                        <h2>Your Contacts:</h2>
                         <ul>
                             {contacts.map((contact) => (
                                 <li key={contact.id || contact.username}>
@@ -110,7 +115,7 @@ const Dashboard = () => {
                     </div>
 
                     <div>
-                        <h2>Incoming Requests</h2>
+                        <h2>Incoming Requests:</h2>
                         {incomingRequests.length === 0 ? (
                             <p>No incoming requests.</p>
                         ) : (
