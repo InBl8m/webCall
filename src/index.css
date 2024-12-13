@@ -1,0 +1,108 @@
+/* Общие стили для всего приложения */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f7fafc; /* Светло-серый фон */
+  color: #2d3748; /* Темно-серый текст */
+  line-height: 1.6;
+}
+
+/* Базовый стиль для ссылок */
+a {
+  text-decoration: none;
+  color: #3182ce; /* Синий */
+  transition: color 0.3s;
+}
+
+a:hover {
+  color: #2b6cb0; /* Темно-синий при наведении */
+}
+
+/* Стили для кнопок */
+button {
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #3182ce; /* Синий фон */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+button:hover {
+  background-color: #2b6cb0; /* Темно-синий при наведении */
+  transform: scale(1.05); /* Легкое увеличение */
+}
+
+button:active {
+  transform: scale(0.95); /* Уменьшение при клике */
+}
+
+/* Заголовки */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 1rem;
+  font-weight: bold;
+  color: #1a202c; /* Темно-серый */
+}
+
+/* Стили для форм */
+input, textarea, select {
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  border: 1px solid #e2e8f0; /* Светло-серая рамка */
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #3182ce; /* Синий */
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2); /* Синяя подсветка */
+}
+
+/* Навигация */
+nav {
+  background-color: #1a202c; /* Темный фон */
+  padding: 1rem 2rem;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Контейнер для контента */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  padding-left: 2rem; /* Отступ слева для основного контента */
+}
+
+/* Стили для ошибок */
+.error-message {
+  color: #e53e3e; /* Красный */
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* Медиа-запросы для адаптации */
+@media (max-width: 768px) {
+  nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .container {
+    padding: 1rem;
+  }
+}
