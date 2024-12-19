@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getUserInfo, searchUsers, addContact, removeContact, getIncomingRequests } from "../services/api";
+import WebRTCChat from "../WebRTCChat";
+
 
 const Dashboard = () => {
     const [user, setUser] = useState(null);
@@ -8,7 +10,19 @@ const Dashboard = () => {
     const [contacts, setContacts] = useState([]);
     const [incomingRequests, setIncomingRequests] = useState([]);
     const [isSearchVisible, setIsSearchVisible] = useState(false);
-    const [isSearchPerformed, setIsSearchPerformed] = useState(false);  // Состояние, чтобы отслеживать, был ли выполнен поиск
+    const [isSearchPerformed, setIsSearchPerformed] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedContact, setSelectedContact] = useState(null);
+
+    const openModal = (contact) => {
+        setSelectedContact(contact);
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setSelectedContact(null);
+        setIsModalOpen(false);
+    };
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -25,7 +39,6 @@ const Dashboard = () => {
         const fetchIncomingRequests = async () => {
             try {
                 const incomingResponse = await getIncomingRequests();
-                // console.log(incomingResponse.data);  // Выводим данные ответа
                 setIncomingRequests(incomingResponse.data.pending_requests || []);
             } catch (err) {
                 console.error("Error fetching incoming requests:", err);
@@ -36,12 +49,10 @@ const Dashboard = () => {
         fetchIncomingRequests();
     }, []);
 
-    // Функция поиска пользователей
     const handleSearch = async () => {
-        setIsSearchPerformed(true);  // Устанавливаем, что поиск был выполнен
+        setIsSearchPerformed(true);
         try {
             const { data } = await searchUsers(searchQuery);
-            // Исключаем пользователей, которые уже есть в контактах
             const filteredResults = data.filter(user =>
                 !contacts.some(contact => contact.username === user.username)
             );
@@ -51,22 +62,16 @@ const Dashboard = () => {
         }
     };
 
-    // Функция добавления контакта
     const handleAddContact = async (contactUsername) => {
         try {
             await addContact(contactUsername);
-
-            // Убираем запрос из списка входящих
             setIncomingRequests(prevRequests =>
                 prevRequests.filter(request => request.username !== contactUsername)
             );
-            // Убираем пользователя из результатов поиска
             setSearchResults(prevResults =>
                 prevResults.filter(user => user.username !== contactUsername)
             );
-            // Закрываем поиск после добавления контакта
             setIsSearchVisible(false);
-            // Перезапрашиваем список контактов, чтобы синхронизироваться с сервером
             const updatedUserInfo = await getUserInfo();
             setContacts(updatedUserInfo.data.contacts || []);
         } catch (err) {
@@ -75,7 +80,6 @@ const Dashboard = () => {
         }
     };
 
-    // Функция удаления контакта
     const handleRemoveContact = async (contactUsername) => {
         try {
             await removeContact(contactUsername);
@@ -90,11 +94,8 @@ const Dashboard = () => {
 
     return (
         <div className="container">
-            {/*<h1>Dashboard</h1>*/}
             {user ? (
                 <>
-                    {/*<p>Welcome, {user.username}! Your role is {user.role}.</p>*/}
-
                     <div>
                         <h2>Your Contacts:</h2>
                         <ul>
@@ -102,13 +103,14 @@ const Dashboard = () => {
                                 <li key={contact.id || contact.username}>
                                     {contact.username}
                                     {contact.confirmed === 0 ? (
-                                        <span> 👋 </span>  // Статус "Ожидает подтверждения"
+                                        <span> 👋 </span>
                                     ) : (
-                                        <span> 🤜🤛 </span>  // Статус "Подтвержден"
+                                        <span> 🤜🤛 </span>
                                     )}
                                     <button onClick={() => handleRemoveContact(contact.username)}>
                                         Remove
                                     </button>
+                                    <button onClick={() => openModal(contact)}>Open Chat</button>
                                 </li>
                             ))}
                         </ul>
@@ -120,16 +122,14 @@ const Dashboard = () => {
                             <p>No incoming requests.</p>
                         ) : (
                             <ul>
-                                {incomingRequests.map((request) => {
-                                    return (
-                                        <li key={request.id}>
-                                            {request.username} 👋
-                                            <button onClick={() => handleAddContact(request.username)}>
-                                                Accept Request
-                                            </button>
-                                        </li>
-                                    );
-                                })}
+                                {incomingRequests.map((request) => (
+                                    <li key={request.id}>
+                                        {request.username} 👋
+                                        <button onClick={() => handleAddContact(request.username)}>
+                                            Accept Request
+                                        </button>
+                                    </li>
+                                ))}
                             </ul>
                         )}
                     </div>
@@ -146,8 +146,6 @@ const Dashboard = () => {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search by username"
-                                id="search-input"
-                                name="searchQuery"
                             />
                             <button onClick={handleSearch}>Search</button>
 
@@ -168,6 +166,13 @@ const Dashboard = () => {
                             </div>
                         </div>
                     )}
+
+                    <WebRTCChat
+                        user={user}
+                        contact={selectedContact}
+                        isOpen={isModalOpen}
+                        onClose={closeModal}
+                    />
                 </>
             ) : (
                 <p>Loading...</p>

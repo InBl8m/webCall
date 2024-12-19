@@ -40,7 +40,7 @@ const Register = () => {
 
     const handleGoogleLogin = () => {
         // Перенаправление на сервер для авторизации через Google
-        window.location.href = "http://127.0.0.1:8000/auth/google";  // Убедитесь, что URL соответствует вашему серверу
+        window.location.href = "http://192.168.1.196:8000/auth/google";  // Убедитесь, что URL соответствует вашему серверу
     };
 
     return (

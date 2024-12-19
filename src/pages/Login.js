@@ -19,11 +19,7 @@ const Login = () => {
 
         try {
             // Отправляем данные на сервер с помощью axios, передаем как FormData
-            const { data } = await login(form);
-
-            // Сохраняем токены в localStorage
-            localStorage.setItem("access_token", data.access_token);
-            localStorage.setItem("refresh_token", data.refresh_token);
+            await login(form);
 
             window.location.href = "/dashboard";  // Редирект на /dashboard
         } catch (err) {
@@ -36,7 +32,7 @@ const Login = () => {
     };
     const handleGoogleLogin = () => {
         // Перенаправление на сервер для авторизации через Google
-        window.location.href = "http://127.0.0.1:8000/auth/google";  // Убедитесь, что URL соответствует вашему серверу
+        window.location.href = "http://192.168.1.196:8000/auth/google";  // Убедитесь, что URL соответствует вашему серверу
     };
 
     return (
