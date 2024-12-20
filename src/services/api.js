@@ -1,7 +1,8 @@
 import axios from "axios";
+import apiRoutes from "./apiRoutes";
 
 const API = axios.create({
-    baseURL: "http://192.168.1.196:8000",
+    baseURL: apiRoutes.BASE_URL,
     withCredentials: true,
 });
 
@@ -13,16 +14,16 @@ API.interceptors.request.use((config) => {
     return config;
 });
 
-export const register = (data) => API.post("/register", data);
-export const login = (data) => API.post("/login", data);
-export const getUserInfo = () => API.get("/user-info");
-export const searchUsers = (query) => API.get(`/search-user?query=${query}`);
+export const register = (data) => API.post(apiRoutes.auth.register, data);
+export const login = (data) => API.post(apiRoutes.auth.login, data);
+export const getUserInfo = () => API.get(apiRoutes.user.info);
+export const searchUsers = (query) => API.get(`${apiRoutes.user.search}?query=${query}`);
 export const addContact = (contactUsername) =>
-    API.post("/add-contact", { contact_username: contactUsername });
-export const getIncomingRequests = () => API.get("/pending-requests");
+    API.post(apiRoutes.user.addContact, { contact_username: contactUsername });
+export const getIncomingRequests = () => API.get(apiRoutes.user.incomingRequests);
 export const removeContact = (contactUsername) =>
-    API.delete(`/remove-contact?contact_username=${contactUsername}`);
-export const logout = () => API.get("/logout");
-export const refreshToken = () => API.post("/refresh-token");
+    API.delete(`${apiRoutes.user.removeContact}?contact_username=${contactUsername}`);
+export const logout = () => API.get(apiRoutes.auth.logout);
+export const refreshToken = () => API.post(apiRoutes.auth.refreshToken);
 
 export default API;

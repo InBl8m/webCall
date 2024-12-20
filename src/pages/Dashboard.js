@@ -1,27 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { getUserInfo, searchUsers, addContact, removeContact, getIncomingRequests } from "../services/api";
 import WebRTCChat from "../WebRTCChat";
-
+import WebRTCShareScreen from "../WebRTCShareScreen";
 
 const Dashboard = () => {
     const [user, setUser] = useState(null);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState([]);
     const [contacts, setContacts] = useState([]);
     const [incomingRequests, setIncomingRequests] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState([]);
     const [isSearchVisible, setIsSearchVisible] = useState(false);
     const [isSearchPerformed, setIsSearchPerformed] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+    const [isScreenSharingModalOpen, setIsScreenSharingModalOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState(null);
 
-    const openModal = (contact) => {
+    const openChatModal = (contact) => {
         setSelectedContact(contact);
-        setIsModalOpen(true);
+        setIsChatModalOpen(true);
     };
 
-    const closeModal = () => {
+    const openScreenSharingModal = (contact) => {
+        setSelectedContact(contact);
+        setIsScreenSharingModalOpen(true);
+    };
+
+    const closeModals = () => {
+        setIsChatModalOpen(false);
+        setIsScreenSharingModalOpen(false);
         setSelectedContact(null);
-        setIsModalOpen(false);
     };
 
     useEffect(() => {
@@ -65,9 +73,6 @@ const Dashboard = () => {
     const handleAddContact = async (contactUsername) => {
         try {
             await addContact(contactUsername);
-            setIncomingRequests(prevRequests =>
-                prevRequests.filter(request => request.username !== contactUsername)
-            );
             setSearchResults(prevResults =>
                 prevResults.filter(user => user.username !== contactUsername)
             );
@@ -75,8 +80,7 @@ const Dashboard = () => {
             const updatedUserInfo = await getUserInfo();
             setContacts(updatedUserInfo.data.contacts || []);
         } catch (err) {
-            console.error("Error accepting request:", err.response ? err.response.data : err);
-            alert(err.response?.data?.detail || "An error occurred while accepting the request.");
+            console.error("Error adding contact:", err);
         }
     };
 
@@ -87,8 +91,7 @@ const Dashboard = () => {
             setContacts(updatedContacts);
             setSearchResults(prevResults => prevResults.filter(user => user.username !== contactUsername));
         } catch (err) {
-            console.error("Error removing contact:", err.response ? err.response.data : err);
-            alert(err.response?.data?.detail || "An error occurred while removing contact.");
+            console.error("Error removing contact:", err);
         }
     };
 
@@ -110,7 +113,8 @@ const Dashboard = () => {
                                     <button onClick={() => handleRemoveContact(contact.username)}>
                                         Remove
                                     </button>
-                                    <button onClick={() => openModal(contact)}>Open Chat</button>
+                                    <button onClick={() => openChatModal(contact)}>Open Chat</button>
+                                    <button onClick={() => openScreenSharingModal(contact)}>Start Screen Sharing</button>
                                 </li>
                             ))}
                         </ul>
@@ -167,12 +171,23 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    <WebRTCChat
-                        user={user}
-                        contact={selectedContact}
-                        isOpen={isModalOpen}
-                        onClose={closeModal}
-                    />
+                    {isChatModalOpen && (
+                        <WebRTCChat
+                            user={user}
+                            contact={selectedContact}
+                            isOpen={isChatModalOpen}
+                            onClose={closeModals}
+                        />
+                    )}
+
+                    {isScreenSharingModalOpen && (
+                        <WebRTCShareScreen
+                            user={user}
+                            contact={selectedContact}
+                            isOpen={isScreenSharingModalOpen}
+                            onClose={closeModals}
+                        />
+                    )}
                 </>
             ) : (
                 <p>Loading...</p>

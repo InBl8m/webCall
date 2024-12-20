@@ -1,16 +1,14 @@
 import React, { useState, useRef } from 'react';
-import axios from 'axios';
 import apiRoutes from "./services/apiRoutes";
+import axios from 'axios';
 
-function WebRTCChat({ user, contact, isOpen, onClose }) {
-    const [localOffer, setLocalOffer] = useState('');
-    const [remoteOffer, setRemoteOfferState] = useState('');
-    const [chat, setChat] = useState('');
-    const [message, setMessage] = useState('');
+
+function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
     const [connectionStatus, setConnectionStatus] = useState('Disconnected');
     const peerConnectionRef = useRef(null);
     const dataChannelRef = useRef(null);
 
+    // Функция для создания WebRTC соединения
     const createPeerConnection = () => {
         const config = {
             iceServers: [
@@ -22,7 +20,6 @@ function WebRTCChat({ user, contact, isOpen, onClose }) {
         peerConnectionRef.current.onicecandidate = (event) => {
             if (event.candidate) return;
             const localDescription = JSON.stringify(peerConnectionRef.current.localDescription);
-            setLocalOffer(localDescription);
             sendLocalOfferToServer(localDescription);
         };
 
@@ -53,11 +50,8 @@ function WebRTCChat({ user, contact, isOpen, onClose }) {
         };
     };
 
+    // Функция для настроек data channel
     const setupDataChannel = () => {
-        dataChannelRef.current.onmessage = (event) => {
-            setChat((prevChat) => `${prevChat}Peer: ${event.data}\n`);
-        };
-
         dataChannelRef.current.onopen = () => {
             setConnectionStatus('Connected');
             console.log('Data channel opened');
@@ -69,6 +63,7 @@ function WebRTCChat({ user, contact, isOpen, onClose }) {
         };
     };
 
+    // Функция для создания и отправки предложения
     const createOffer = async () => {
         createPeerConnection();
         const dataChannel = peerConnectionRef.current.createDataChannel('chat');
@@ -79,6 +74,7 @@ function WebRTCChat({ user, contact, isOpen, onClose }) {
         await peerConnectionRef.current.setLocalDescription(offer);
     };
 
+    // Функция для отправки локального предложения на сервер
     const sendLocalOfferToServer = async (localOffer) => {
         const payload = {
             user_1: user.username,
@@ -94,22 +90,20 @@ function WebRTCChat({ user, contact, isOpen, onClose }) {
         }
     };
 
+    // Функция для обработки предложений
     const handleOffers = async () => {
-        let offerAccepted = false; // Флаг для отслеживания, когда предложение принято
-        let offerCreated = false;  // Флаг для отслеживания, было ли создано предложение
-        let retryCount = 0;        // Счётчик попыток
-        const maxRetries = 10;      // Максимальное количество попыток
-        const retryDelay = 5000;   // Задержка между попытками в миллисекундах (5 секунд)
+        let offerAccepted = false;
+        let offerCreated = false;
+        let retryCount = 0;
+        const maxRetries = 10;
+        const retryDelay = 5000;
 
-        // Функция для задержки
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         while (!offerAccepted && retryCount < maxRetries) {
             try {
-                console.log('Attempt #', retryCount + 1); // Логируем номер текущей попытки
-                console.log('Offer Created:', offerCreated);  // Логируем значение offerCreated в начале цикла
+                console.log('Attempt #', retryCount + 1);
 
-                // Получаем последние предложения с сервера
                 const response = await axios.get(`${apiRoutes.CHAT_URL}${apiRoutes.chat.invitedChats(user.username)}`);
                 const chats = response.data;
 
@@ -118,57 +112,47 @@ function WebRTCChat({ user, contact, isOpen, onClose }) {
 
                     if (latestChat) {
                         console.log('Found latest offer:', latestChat.offer);
-                        setRemoteOfferState(latestChat.offer); // Устанавливаем состояние удалённого предложения
-                        await handleSetRemoteOffer(latestChat.offer); // Устанавливаем удалённое предложение/ответ
+                        await handleSetRemoteOffer(latestChat.offer);
                         await axios.post(`${apiRoutes.CHAT_URL}${apiRoutes.chat.acceptInvitation(latestChat.id)}`);
-                        offerAccepted = true; // Если предложение найдено и принято, завершаем цикл
+                        offerAccepted = true;
                     } else {
                         if (!offerCreated) {
                             console.log('No offers found from contact');
-                            await createOffer(); // Создаем новое предложение
-                            offerCreated = true;  // Обновляем флаг после создания предложения
+                            await createOffer();
+                            offerCreated = true;
                         } else {
                             console.log('Waiting for offer...');
                         }
-
-                        // Если предложения нет, ждем перед повторной попыткой
-                        await delay(retryDelay);  // Таймаут между попытками
+                        await delay(retryDelay);
                     }
                 } else {
-                    console.log('Invalid response format:', response.data);
-                    offerCreated = true; // В случае некорректного ответа также завершаем цикл
+                    offerCreated = true;
                 }
 
-                retryCount++; // Увеличиваем счётчик попыток
-
+                retryCount++;
             } catch (error) {
                 console.error('Error handling offers:', error);
-                // Если ошибка при запросе (например, 404), пытаемся создать новое предложение
                 if (error.response && error.response.status === 404) {
                     console.log('No offer found, creating new offer...');
                     if (!offerCreated) {
-                        await createOffer(); // Создаем новое предложение при 404
-                        offerCreated = true; // Устанавливаем флаг после попытки создать предложение
+                        await createOffer();
+                        offerCreated = true;
                     }
                 } else {
                     console.log('Other error occurred, ending process.');
-                    offerAccepted = true; // Завершаем цикл при других ошибках
+                    offerAccepted = true;
                 }
-
-                // Ждем перед повторной попыткой после ошибки
-                await delay(retryDelay);  // Таймаут между попытками
-                retryCount++; // Увеличиваем счётчик попыток
+                await delay(retryDelay);
+                retryCount++;
             }
         }
 
-        // Если попытки исчерпаны
         if (!offerAccepted) {
             console.log('Max retries reached. Ending process.');
         }
     };
 
-
-
+    // Функция для установки удаленного предложения
     const handleSetRemoteOffer = async (remoteOffer) => {
         if (!peerConnectionRef.current) {
             createPeerConnection();
@@ -181,73 +165,71 @@ function WebRTCChat({ user, contact, isOpen, onClose }) {
             if (remoteDesc.type === 'offer') {
                 const answer = await peerConnectionRef.current.createAnswer();
                 await peerConnectionRef.current.setLocalDescription(answer);
-                setLocalOffer(JSON.stringify(peerConnectionRef.current.localDescription));
             }
         } catch (error) {
             console.error('Error setting remote offer/answer:', error);
         }
     };
 
-    const sendMessage = () => {
-        if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
-            dataChannelRef.current.send(message);
-            setChat((prevChat) => `${prevChat}You: ${message}\n`);
-            setMessage('');
+    // Функция для расшаривания экрана
+    const startScreenSharing = async () => {
+        try {
+            // Запрашиваем доступ к экрану
+            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            const videoTrack = stream.getTracks()[0];
+
+            // Добавляем видео-трек в WebRTC соединение
+            if (peerConnectionRef.current) {
+                const sender = peerConnectionRef.current.getSenders().find(sender => sender.track.kind === videoTrack.kind);
+                if (sender) {
+                    sender.replaceTrack(videoTrack);
+                } else {
+                    peerConnectionRef.current.addTrack(videoTrack, stream);
+                }
+            }
+
+            // Отображаем видео на странице
+            const videoElement = document.getElementById('localVideo');
+            if (videoElement) {
+                videoElement.srcObject = stream;
+            }
+
+            console.log('Screen sharing started');
+
+            // Остановка экрана при завершении
+            stream.getTracks().forEach(track => {
+                track.onended = () => {
+                    console.log('Screen sharing stopped');
+                    if (peerConnectionRef.current) {
+                        const sender = peerConnectionRef.current.getSenders().find(sender => sender.track.kind === videoTrack.kind);
+                        if (sender) {
+                            sender.replaceTrack(null);
+                        }
+                    }
+                };
+            });
+        } catch (error) {
+            console.error('Error starting screen sharing:', error);
         }
     };
 
+    // Если модальное окно закрыто, ничего не рендерим
     if (!isOpen) return null;
 
     return (
         <div className="modal">
             <div className="modal-content">
                 <h1>WebRTC P2P from {user.username} to {contact?.username}</h1>
-                <div style={{display: 'flex', justifyContent: 'space-between', padding: '10px'}}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px' }}>
                     <button onClick={handleOffers}>Connect</button>
                     <button onClick={onClose}>Close Chat</button>
+                    <button onClick={startScreenSharing}>Start Screen Sharing</button>
                 </div>
-                {/*<textarea*/}
-                {/*    value={localOffer}*/}
-                {/*    placeholder="Local Offer"*/}
-                {/*    rows="2"*/}
-                {/*    cols="50"*/}
-                {/*    readOnly*/}
-                {/*></textarea>*/}
-                {/*<br />*/}
-                {/*<button onClick={createOffer}>Create Offer</button>*/}
-                {/*<br />*/}
-                {/*<br />*/}
-                {/*<textarea*/}
-                {/*    value={remoteOffer}*/}
-                {/*    onChange={(e) => setRemoteOfferState(e.target.value)}*/}
-                {/*    placeholder="Remote Offer/Answer"*/}
-                {/*    rows="2"*/}
-                {/*    cols="50"*/}
-                {/*></textarea>*/}
-                {/*<br />*/}
-                {/*<button onClick={handleSetRemoteOffer}>Set Remote Offer/Answer</button>*/}
-                {/*<br />*/}
-                {/*<br />*/}
-                <textarea
-                    value={chat}
-                    placeholder="Chat"
-                    rows="5"
-                    cols="50"
-                    readOnly
-                ></textarea>
-                <br/>
-                <input
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    type="text"
-                    placeholder="Type your message here..."
-                />
-                <button onClick={sendMessage}>Send</button>
-                <br/>
+                <video id="localVideo" autoPlay muted />
                 <p>Status: {connectionStatus}</p>
             </div>
         </div>
     );
 }
 
-export default WebRTCChat;
+export default WebRTCShareScreen;
