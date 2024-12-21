@@ -1,8 +1,8 @@
 const apiRoutes = {
-    // BASE_URL: "http://192.168.1.196:8000",
-    // CHAT_URL: "http://192.168.1.196:7000",
-    BASE_URL: "http://localhost:8000",
-    CHAT_URL: "http://localhost:7000",
+    BASE_URL: "https://192.168.1.151:8000",
+    CHAT_URL: "https://192.168.1.151:7000",
+    // BASE_URL: "http://localhost:8000",
+    // CHAT_URL: "http://localhost:7000",
     auth: {
         register: "/register",
         login: "/login",

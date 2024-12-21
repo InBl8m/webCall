@@ -204,7 +204,7 @@ function WebRTCChat({ user, contact, isOpen, onClose }) {
                 <h1>WebRTC P2P from {user.username} to {contact?.username}</h1>
                 <div style={{display: 'flex', justifyContent: 'space-between', padding: '10px'}}>
                     <button onClick={handleOffers}>Connect</button>
-                    <button onClick={onClose}>Close Chat</button>
+                    <button onClick={onClose} className="button remove-button">Close</button>
                 </div>
                 {/*<textarea*/}
                 {/*    value={localOffer}*/}
@@ -231,7 +231,7 @@ function WebRTCChat({ user, contact, isOpen, onClose }) {
                 <textarea
                     value={chat}
                     placeholder="Chat"
-                    rows="5"
+                    rows="15"
                     cols="50"
                     readOnly
                 ></textarea>

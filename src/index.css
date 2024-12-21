@@ -44,6 +44,16 @@ button:active {
   transform: scale(0.95); /* Уменьшение при клике */
 }
 
+/* Специальный стиль для кнопки Remove */
+.remove-button {
+  background-color: #f44336;  /* Красный фон */
+  color: white;
+}
+
+.remove-button:hover {
+  background-color: #e53935;  /* Темно-красный при наведении */
+}
+
 /* Заголовки */
 h1, h2, h3, h4, h5, h6 {
   margin: 0 0 1rem;
@@ -125,10 +135,11 @@ ul li button {
   color: #3182ce;
   border-radius: 5px;
   transition: background-color 0.3s, color 0.3s;
+  margin-right: 5px;
 }
 
 ul li button:hover {
-  background-color: #ce2565;
+  background-color: #3b4b83;
   color: white;
 }
 

@@ -110,11 +110,16 @@ const Dashboard = () => {
                                     ) : (
                                         <span> 🤜🤛 </span>
                                     )}
-                                    <button onClick={() => handleRemoveContact(contact.username)}>
+                                    <button onClick={() => openChatModal(contact)}>
+                                        Open Chat
+                                    </button>
+                                    <button onClick={() => openScreenSharingModal(contact)}>
+                                        Share Screen
+                                    </button>
+                                    <button onClick={() => handleRemoveContact(contact.username)}
+                                            className="button remove-button">
                                         Remove
                                     </button>
-                                    <button onClick={() => openChatModal(contact)}>Open Chat</button>
-                                    <button onClick={() => openScreenSharingModal(contact)}>Start Screen Sharing</button>
                                 </li>
                             ))}
                         </ul>

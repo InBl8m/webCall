@@ -1,31 +1,30 @@
 import React, { useState, useRef } from 'react';
-import apiRoutes from "./services/apiRoutes";
 import axios from 'axios';
-
+import apiRoutes from './services/apiRoutes';
 
 function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
+    const [localOffer, setLocalOffer] = useState('');
+    const [remoteOffer, setRemoteOfferState] = useState('');
     const [connectionStatus, setConnectionStatus] = useState('Disconnected');
+    const localVideoRef = useRef(null);
+    const remoteVideoRef = useRef(null);
     const peerConnectionRef = useRef(null);
-    const dataChannelRef = useRef(null);
 
-    // Функция для создания WebRTC соединения
     const createPeerConnection = () => {
         const config = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-            ],
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
         };
         peerConnectionRef.current = new RTCPeerConnection(config);
 
         peerConnectionRef.current.onicecandidate = (event) => {
             if (event.candidate) return;
             const localDescription = JSON.stringify(peerConnectionRef.current.localDescription);
+            setLocalOffer(localDescription);
             sendLocalOfferToServer(localDescription);
         };
 
-        peerConnectionRef.current.ondatachannel = (event) => {
-            dataChannelRef.current = event.channel;
-            setupDataChannel();
+        peerConnectionRef.current.ontrack = (event) => {
+            remoteVideoRef.current.srcObject = event.streams[0];
         };
 
         peerConnectionRef.current.oniceconnectionstatechange = () => {
@@ -50,31 +49,27 @@ function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
         };
     };
 
-    // Функция для настроек data channel
-    const setupDataChannel = () => {
-        dataChannelRef.current.onopen = () => {
-            setConnectionStatus('Connected');
-            console.log('Data channel opened');
-        };
+    const shareScreen = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            localVideoRef.current.srcObject = stream;
 
-        dataChannelRef.current.onclose = () => {
-            setConnectionStatus('Disconnected');
-            console.log('Data channel closed');
-        };
+            stream.getTracks().forEach(track => {
+                peerConnectionRef.current.addTrack(track, stream);
+            });
+        } catch (error) {
+            console.error('Error sharing screen:', error);
+        }
     };
 
-    // Функция для создания и отправки предложения
     const createOffer = async () => {
         createPeerConnection();
-        const dataChannel = peerConnectionRef.current.createDataChannel('chat');
-        dataChannelRef.current = dataChannel;
-        setupDataChannel();
+        await shareScreen();
 
         const offer = await peerConnectionRef.current.createOffer();
         await peerConnectionRef.current.setLocalDescription(offer);
     };
 
-    // Функция для отправки локального предложения на сервер
     const sendLocalOfferToServer = async (localOffer) => {
         const payload = {
             user_1: user.username,
@@ -90,7 +85,6 @@ function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
         }
     };
 
-    // Функция для обработки предложений
     const handleOffers = async () => {
         let offerAccepted = false;
         let offerCreated = false;
@@ -112,6 +106,7 @@ function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
 
                     if (latestChat) {
                         console.log('Found latest offer:', latestChat.offer);
+                        setRemoteOfferState(latestChat.offer);
                         await handleSetRemoteOffer(latestChat.offer);
                         await axios.post(`${apiRoutes.CHAT_URL}${apiRoutes.chat.acceptInvitation(latestChat.id)}`);
                         offerAccepted = true;
@@ -123,15 +118,19 @@ function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
                         } else {
                             console.log('Waiting for offer...');
                         }
+
                         await delay(retryDelay);
                     }
                 } else {
+                    console.log('Invalid response format:', response.data);
                     offerCreated = true;
                 }
 
                 retryCount++;
+
             } catch (error) {
                 console.error('Error handling offers:', error);
+
                 if (error.response && error.response.status === 404) {
                     console.log('No offer found, creating new offer...');
                     if (!offerCreated) {
@@ -142,6 +141,7 @@ function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
                     console.log('Other error occurred, ending process.');
                     offerAccepted = true;
                 }
+
                 await delay(retryDelay);
                 retryCount++;
             }
@@ -152,7 +152,6 @@ function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
         }
     };
 
-    // Функция для установки удаленного предложения
     const handleSetRemoteOffer = async (remoteOffer) => {
         if (!peerConnectionRef.current) {
             createPeerConnection();
@@ -165,55 +164,13 @@ function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
             if (remoteDesc.type === 'offer') {
                 const answer = await peerConnectionRef.current.createAnswer();
                 await peerConnectionRef.current.setLocalDescription(answer);
+                setLocalOffer(JSON.stringify(peerConnectionRef.current.localDescription));
             }
         } catch (error) {
             console.error('Error setting remote offer/answer:', error);
         }
     };
 
-    // Функция для расшаривания экрана
-    const startScreenSharing = async () => {
-        try {
-            // Запрашиваем доступ к экрану
-            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-            const videoTrack = stream.getTracks()[0];
-
-            // Добавляем видео-трек в WebRTC соединение
-            if (peerConnectionRef.current) {
-                const sender = peerConnectionRef.current.getSenders().find(sender => sender.track.kind === videoTrack.kind);
-                if (sender) {
-                    sender.replaceTrack(videoTrack);
-                } else {
-                    peerConnectionRef.current.addTrack(videoTrack, stream);
-                }
-            }
-
-            // Отображаем видео на странице
-            const videoElement = document.getElementById('localVideo');
-            if (videoElement) {
-                videoElement.srcObject = stream;
-            }
-
-            console.log('Screen sharing started');
-
-            // Остановка экрана при завершении
-            stream.getTracks().forEach(track => {
-                track.onended = () => {
-                    console.log('Screen sharing stopped');
-                    if (peerConnectionRef.current) {
-                        const sender = peerConnectionRef.current.getSenders().find(sender => sender.track.kind === videoTrack.kind);
-                        if (sender) {
-                            sender.replaceTrack(null);
-                        }
-                    }
-                };
-            });
-        } catch (error) {
-            console.error('Error starting screen sharing:', error);
-        }
-    };
-
-    // Если модальное окно закрыто, ничего не рендерим
     if (!isOpen) return null;
 
     return (
@@ -221,11 +178,13 @@ function WebRTCShareScreen({ user, contact, isOpen, onClose }) {
             <div className="modal-content">
                 <h1>WebRTC P2P from {user.username} to {contact?.username}</h1>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px' }}>
-                    <button onClick={handleOffers}>Connect</button>
-                    <button onClick={onClose}>Close Chat</button>
-                    <button onClick={startScreenSharing}>Start Screen Sharing</button>
+                    <button onClick={handleOffers}>Start sharing/Accept sharing</button>
+                    <button onClick={onClose} className="button remove-button">Close</button>
                 </div>
-                <video id="localVideo" autoPlay muted />
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px' }}>
+                    <video ref={localVideoRef} autoPlay muted style={{ width: '45%' }} />
+                    <video ref={remoteVideoRef} autoPlay style={{ width: '45%' }} />
+                </div>
                 <p>Status: {connectionStatus}</p>
             </div>
         </div>
